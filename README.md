@@ -82,24 +82,22 @@ _++I hate this name. I don't know what to call it_
 
 [@oehme points out](https://github.com/google/dagger/issues/970#issuecomment-551917809) that the "middle" `componentB` exposes a type `B` which has a constructor argument on `A` and `componentB` also has an annotation dependency on `componentA`
 
-I think the later can be solved by having componentB only expose the interface. i.e. B should be an interface.
+I think the later can be solved by having `componentB` only expose the interface. i.e. `B` should be an interface.
 
-But that doesn't prevent the former. But that had me thinking, Is an argument *within* an annotation part of a class/interface's public API. I create a stone-simple example based on the same `app` <-- `b` <--- `a` dependency structure: https://github.com/tir38/android-dagger-970/tree/annotation-only
+But that doesn't prevent the former. But that had me thinking, Is an argument *within* an annotation part of a class/interface's public API. Given an even more simple example:
 
 ```
 package com.example.b
 
-import com.example.a.ExceptionFromA
+import com.example.a.ClassFromA
 
 /**
- * Is ExceptionFromA part of the public API of this interface?
+ * Is ClassFromA part of the public API of this interface?
  */
-interface AnnotatedB {
-  @Throws(
-    exceptionClasses = [ExceptionFromA::class]
-  )
-  fun throws()
-}
+@SomeAnnotation(
+  args = [ClassFromA::class]
+)
+interface AnnotatedB
 ```
 
 Within the app module I can create an implementation of AnnotatedB without needing to `api project(path: ':a')`
@@ -109,13 +107,9 @@ class MainActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
-    MyThing().throws()
+	val thing = MyThing()
   }
 
-  class MyThing : AnnotatedB {
-    override fun throws() {
-      // did I pick up the annotation here?
-    }
-  }
+  class MyThing : AnnotatedB {  }
 }
 ```
