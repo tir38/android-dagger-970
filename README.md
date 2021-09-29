@@ -73,3 +73,49 @@ If dagger is validating the whole graph this shouldn't work.
 
 
 _++I hate this name. I don't know what to call it_
+
+
+
+------
+
+### A note about exposing types through constructor and annotation.
+
+[@oehme points out](https://github.com/google/dagger/issues/970#issuecomment-551917809) that the "middle" `componentB` exposes a type `B` which has a constructor argument on `A` and `componentB` also has an annotation dependency on `componentA`
+
+I think the later can be solved by having componentB only expose the interface. i.e. B should be an interface.
+
+But that doesn't prevent the former. But that had me thinking, Is an argument *within* an annotation part of a class/interface's public API. I create a stone-simple example based on the same `app` <-- `b` <--- `a` dependency structure: https://github.com/tir38/android-dagger-970/tree/annotation-only
+
+```
+package com.example.b
+
+import com.example.a.ExceptionFromA
+
+/**
+ * Is ExceptionFromA part of the public API of this interface?
+ */
+interface AnnotatedB {
+  @Throws(
+    exceptionClasses = [ExceptionFromA::class]
+  )
+  fun throws()
+}
+```
+
+Within the app module I can create an implementation of AnnotatedB without needing to `api project(path: ':a')`
+
+```
+class MainActivity : AppCompatActivity() {
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContentView(R.layout.activity_main)
+    MyThing().throws()
+  }
+
+  class MyThing : AnnotatedB {
+    override fun throws() {
+      // did I pick up the annotation here?
+    }
+  }
+}
+```
